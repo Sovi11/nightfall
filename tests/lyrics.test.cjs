@@ -24,3 +24,11 @@ test('plain text remains manually advanceable and markup remains text',()=>{
   assert.equal(p.synced,false);
   assert.deepEqual(p.lines.map(l=>l.text),['One original line','<img src=x onerror=alert(1)>']);
 });
+test('calibrating a heard line aligns album lyrics with a video intro',()=>{
+  assert.equal(typeof core.calibrationOffset,'function');
+  const lines=[{time:12},{time:20},{time:30}];
+  const adjustment=core.calibrationOffset(20,45);
+  assert.equal(adjustment,-25);
+  assert.equal(core.activeLine(lines,45,adjustment),1);
+  assert.equal(core.calibrationOffset(20,15),5);
+});

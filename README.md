@@ -28,4 +28,10 @@ If embedding is blocked, the optional external-player companion keeps the stage 
 
 Run all regression tests with `node --test tests/*.test.cjs`.
 
+## DJ practice and lyric calibration (v4)
+
+The DJ studio now includes three downloadable Kevin MacLeod tracks and a button that loads the 117 BPM starter pair into both decks. The third track is 120 BPM for tempo-matching practice. Files are intentionally tracked in `assets/music/`; source, licence and attribution text are in `assets/music/CREDITS.md`. The beginner lessons link to three Crossfader videos verified through the publisher's own beginner guide and YouTube metadata. A DJ shortcut is visible on the homepage and inside the concert dialog.
+
+For lyric timing, available official lyric videos are preferred over narrative music videos. “Lyrics out of sync?” provides half-second adjustments and a selected-line calibration button: select the phrase and tap when its first word is heard. The adjustment is stored separately for each video ID, local audio file signature, or external-player mode. Previously the per-song offset was reused across different recordings. Lyric status now distinguishes playback from waiting or a paused manual clock. Calibration is a constant time offset; it cannot compensate for multiple cinematic cuts within a video or a different performance/tempo.
+
 Validation: JavaScript syntax checks, HTTP 200 checks, browser verification of search and learned state, two-deck demo playback, visible audio metering, tempo sync, cue/loop controls, and recording download creation. YouTube embedding was unavailable in the preview browser; direct links and local playback are provided.

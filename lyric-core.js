@@ -15,5 +15,6 @@
     while(left<=right){const mid=(left+right)>>1;if(lines[mid].time<=time+adjustment){result=mid;left=mid+1}else right=mid-1}
     return result;
   }
-  const api={parseLyrics,activeLine};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.NightfallLyrics=api;
+  function calibrationOffset(lineTime,playbackTime){return Math.round((lineTime-playbackTime)*10)/10}
+  const api={parseLyrics,activeLine,calibrationOffset};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.NightfallLyrics=api;
 })(typeof window==='undefined'?globalThis:window);

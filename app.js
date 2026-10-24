@@ -7,11 +7,15 @@ let audioCtx,audioAnalyser,audioNode,audioBins;
 let lyricsRequest=null,lyricsGeneration=0,lookupBlockedUntil=0,lyricCredit='',lookupMessage='';
 const lyricCache=new Map();
 let companionOffset=0,companionStart=0,companionRunning=false,embedGeneration=0;
+let localSignature='local';
 const audio=$('#localSong');
 function toast(message){$('#toast').textContent=message;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3800)}
 function companionTime(){return companionOffset+(companionRunning?(performance.now()-companionStart)/1000:0)}
 function time(){return source==='companion'?companionTime():source==='local'?audio.currentTime:yt?.getCurrentTime?.()||0}
 function format(t){return Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0')}
+function offsetKey(){return'nightfall-alignment-'+active+'-'+(source==='youtube'?selectedVideo:source==='local'?localSignature:'external')}
+function restoreAlignment(){adjustment=Number(read(offsetKey(),0));$('#lyricOffset').value=adjustment;$('#offsetValue').textContent=adjustment.toFixed(1)+'s';lastDrawnLine=-999}
+function setAlignment(value){adjustment=Math.max(-600,Math.min(600,Math.round(value*10)/10));$('#lyricOffset').value=adjustment;$('#offsetValue').textContent=adjustment.toFixed(1)+'s';save(offsetKey(),adjustment);lastDrawnLine=-999;drawLyrics()}
 function seek(t){if(source==='companion'){companionOffset=Math.max(0,t);companionStart=performance.now()}else if(source==='local'){audio.currentTime=Math.max(0,Math.min(t,audio.duration||0))}else yt?.seekTo?.(Math.max(0,t),true)}
 function render(){
   const q=$('#search').value.toLowerCase();$('#songs').replaceChildren();
@@ -37,14 +41,14 @@ function embed(){
   audio.pause();source='youtube';playing=false;companionRunning=false;$('#startClock').textContent='▶ Start lyric clock';$('#player').classList.remove('local-source','companion-source');audio.hidden=true;$('#playbackNotice').hidden=true;
   destroyVideo();$('#youtubeLink').href='https://www.youtube.com/watch?v='+selectedVideo;
   const frame=NightfallPlayer.createYouTubeFrame(document,selectedVideo,tracks[active][0],location.origin,location.href);$('#video').append(frame);connectVideo();
-  lastDrawnLine=-999;
+  restoreAlignment();
 }
 function releaseAudio(){audio.pause();audio.removeAttribute('src');audio.load();audio.hidden=true;if(localAudioUrl)URL.revokeObjectURL(localAudioUrl);localAudioUrl=null;$('#audioName').textContent='';$('#practiceAudio').value=''}
 function openSong(i){
   lyricsGeneration++;lyricsRequest?.abort();lyricCredit='';lookupMessage='';$('#fetchLyrics').disabled=false;$('#fetchLyrics').textContent='↻ Find lyrics automatically';$('#lyricProvider').textContent='Lyrics provided by LRCLIB';
-  active=(i+tracks.length)%tracks.length;releaseAudio();source='youtube';playing=false;companionOffset=0;companionRunning=false;$('#companionHelp').open=false;selectedVideo=tracks[active][2];
+  active=(i+tracks.length)%tracks.length;releaseAudio();source='youtube';playing=false;companionOffset=0;companionRunning=false;$('#companionHelp').open=false;selectedVideo=lyricVideos[active]||tracks[active][2];
   $('#playingTitle').textContent=tracks[active][0];$('#songTip').textContent=tracks[active][5];updateLearned();
-  $('#lyricInput').value=read('nightfall-lyrics-'+active,'');adjustment=Number(read('nightfall-offset-'+active,0));$('#lyricOffset').value=adjustment;$('#offsetValue').textContent=adjustment.toFixed(1)+'s';
+  $('#lyricInput').value=read('nightfall-lyrics-'+active,'');restoreAlignment();
   loadLyrics($('#lyricInput').value,false);$('#lyricFile').value='';
   if(!$('#player').open)$('#player').showModal();setMode(read('nightfall-mode','concert'));embed();if(!$('#lyricInput').value)lookupLyrics();
 }
@@ -54,8 +58,8 @@ $('#start').onclick=()=>openSong(0);$('#previousSong').onclick=()=>openSong(acti
 $('#officialBtn').onclick=()=>{selectedVideo=tracks[active][2];embed()};
 $('#lyricsBtn').onclick=()=>{if(lyricVideos[active]){selectedVideo=lyricVideos[active];embed()}else window.open('https://www.youtube.com/results?search_query='+encodeURIComponent('The Weeknd '+tracks[active][0]+' lyrics'),'_blank','noopener')};
 $('#retryVideo').onclick=embed;
-$('#copySite').onclick=async()=>{try{await navigator.clipboard.writeText('https://sovi11.github.io/nightfall/?v=3');toast('Site link copied. Paste it into Chrome or Safari.')}catch{toast('Open https://sovi11.github.io/nightfall/?v=3 in Chrome or Safari.')}};
-function useCompanion(){yt?.pauseVideo?.();audio.pause();audio.hidden=true;source='companion';playing=false;companionRunning=false;companionOffset=0;$('#player').classList.remove('local-source');$('#player').classList.add('companion-source');$('#startClock').textContent='▶ Start lyric clock';$('#companionHelp').open=true;$('#playbackNotice').hidden=true;lastDrawnLine=-999}
+$('#copySite').onclick=async()=>{try{await navigator.clipboard.writeText('https://sovi11.github.io/nightfall/?v=4');toast('Site link copied. Paste it into Chrome or Safari.')}catch{toast('Open https://sovi11.github.io/nightfall/?v=4 in Chrome or Safari.')}};
+function useCompanion(){yt?.pauseVideo?.();audio.pause();audio.hidden=true;source='companion';playing=false;companionRunning=false;companionOffset=0;$('#player').classList.remove('local-source');$('#player').classList.add('companion-source');$('#startClock').textContent='▶ Start lyric clock';$('#companionHelp').open=true;$('#playbackNotice').hidden=true;restoreAlignment()}
 $('#useCompanion').onclick=()=>{useCompanion();window.open($('#youtubeLink').href,'_blank','noopener');toast('Play the song on YouTube, then start the lyric clock here at the same moment.')};
 $('#startClock').onclick=()=>{if(source!=='companion')useCompanion();if(companionRunning){companionOffset=companionTime();companionRunning=false}else{companionStart=performance.now();companionRunning=true}playing=companionRunning;$('#startClock').textContent=companionRunning?'Ⅱ Pause lyric clock':'▶ Start lyric clock'};
 $('#resetClock').onclick=()=>{if(source!=='companion')return;companionRunning=false;companionOffset=0;playing=false;$('#startClock').textContent='▶ Start lyric clock';lastDrawnLine=-999;drawLyrics()};
@@ -76,6 +80,7 @@ $('#fullscreenBtn').onclick=async()=>{try{if(document.fullscreenElement)await do
 function loadLyrics(raw,persist=true){
   if(persist){lyricsGeneration++;lyricsRequest?.abort();lyricCredit='YOUR LYRICS';lookupMessage='';$('#fetchLyrics').disabled=false;$('#fetchLyrics').textContent='↻ Find lyrics automatically';$('#lyricProvider').textContent=raw?'Using your imported / pasted lyrics':'Lyrics provided by LRCLIB'}
   lyrics=NightfallLyrics.parseLyrics(raw);manualLine=0;lineIndex=-1;lastDrawnLine=-999;$('#lyricDisplay').replaceChildren();
+  $('#syncLine').replaceChildren();lyrics.lines.forEach((line,i)=>{if(!line.text)return;const option=document.createElement('option');option.value=i;option.textContent=line.text;$('#syncLine').append(option)});$('#syncLine').disabled=!lyrics.synced;$('#matchLine').disabled=!lyrics.synced;
   $('#lyricsLoadState').textContent=lyrics.lines.length?`${lyrics.synced?'✓ Synced lyrics ready':'✓ Lyrics ready'} · ${lyrics.lines.length} lines`:'No lyrics loaded yet. Automatic lookup starts when you choose a song.';
   lyrics.lines.forEach((line,i)=>{const b=document.createElement('button');b.textContent=line.text||'♪';b.onclick=()=>{if(lyrics.synced)seek(line.time-adjustment);else manualLine=i;drawLyrics()};$('#lyricDisplay').append(b)});
   $('#prevLine').disabled=lyrics.synced||!lyrics.lines.length;$('#nextLine').disabled=lyrics.synced||!lyrics.lines.length;$('#lyricOffset').disabled=!lyrics.synced;
@@ -84,15 +89,17 @@ function loadLyrics(raw,persist=true){
 function drawLyrics(){
   if(!lyrics.lines.length){$('#lyricPrev').textContent='';$('#lyricCurrent').textContent=$('#player').dataset.mode==='karaoke'?'YOUR VOICE. YOUR SPOTLIGHT.':'THE NIGHT IS YOURS.';$('#lyricNext').textContent=lookupMessage||'Play the lyric video, or add your lyrics below.';$('#lyricStatus').textContent='LYRICS WHEN AVAILABLE · YOUR OWN LRC / TXT ALSO WORKS';return}
   lineIndex=lyrics.synced?NightfallLyrics.activeLine(lyrics.lines,time(),adjustment):manualLine;
+  $('#lyricStatus').textContent=(lyrics.synced?(source==='companion'?(companionRunning?'MANUAL CLOCK RUNNING':'MANUAL CLOCK PAUSED'):playing?'FOLLOWING '+(source==='local'?'YOUR AUDIO':'YOUTUBE'):'LYRICS READY · WAITING FOR PLAYBACK'):'MANUAL LYRICS · USE NEXT LINE')+(lyricCredit?' · '+lyricCredit:'');
   if(lastDrawnLine===lineIndex)return;lastDrawnLine=lineIndex;
   $('#lyricPrev').textContent=lyrics.lines[lineIndex-1]?.text||'';$('#lyricCurrent').textContent=lineIndex<0?'GET READY TO SING…':lyrics.lines[lineIndex].text||'♪';$('#lyricNext').textContent=lyrics.lines[lineIndex+1]?.text||'';
-  $('#lyricStatus').textContent=(lyrics.synced?(source==='companion'?'MANUAL CLOCK · MATCH EXTERNAL YOUTUBE':'SYNCED TO '+(source==='local'?'YOUR AUDIO':'YOUTUBE')):'MANUAL LYRICS · USE NEXT LINE')+(lyricCredit?' · '+lyricCredit:'');
   [...$('#lyricDisplay').children].forEach((b,i)=>{b.classList.toggle('current',i===lineIndex);if(i===lineIndex&&$('#player').dataset.mode==='practice')b.scrollIntoView({block:'nearest',behavior:motion?'smooth':'instant'})});
 }
 $('#lyricFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>500000){toast('Choose a lyric file under 500 KB.');return}try{loadLyrics(await f.text())}catch{toast('Could not read that lyric file. Try pasting the text.')}};
 $('#applyLyrics').onclick=()=>loadLyrics($('#lyricInput').value);$('#clearLyrics').onclick=()=>{loadLyrics('');$('#lyricFile').value=''};
 $('#prevLine').onclick=()=>{manualLine=Math.max(0,manualLine-1);drawLyrics()};$('#nextLine').onclick=()=>{manualLine=Math.min(lyrics.lines.length-1,manualLine+1);drawLyrics()};
-$('#lyricOffset').oninput=e=>{adjustment=Number(e.target.value);$('#offsetValue').textContent=adjustment.toFixed(1)+'s';save('nightfall-offset-'+active,adjustment);drawLyrics()};
+$('#lyricOffset').oninput=e=>setAlignment(Number(e.target.value));
+$('#lyricsEarlier').onclick=()=>setAlignment(adjustment+.5);$('#lyricsLater').onclick=()=>setAlignment(adjustment-.5);$('#resetAlignment').onclick=()=>setAlignment(0);
+$('#matchLine').onclick=()=>{if(!playing){toast('Start playback first. For external YouTube, start the manual lyric clock here.');return}const line=lyrics.lines[Number($('#syncLine').value)];if(!line||line.time===null)return;setAlignment(NightfallLyrics.calibrationOffset(line.time,time()));toast('Aligned this line with the current audio. Saved for this recording.')};
 $('#lyricSize').oninput=e=>$('#player').style.setProperty('--lyric-size',e.target.value+'px');
 async function lookupLyrics(){
   lyricsRequest?.abort();const controller=new AbortController();lyricsRequest=controller;const generation=++lyricsGeneration,track=active;
@@ -116,7 +123,7 @@ $('#fetchLyrics').onclick=lookupLyrics;
 
 audio.addEventListener('play',()=>{playing=true;source='local';yt?.pauseVideo?.();if(audioCtx?.state==='suspended')audioCtx.resume().catch(()=>{})});audio.addEventListener('pause',()=>{if(source==='local')playing=false});audio.addEventListener('ended',()=>{if(source==='local')playing=false});audio.addEventListener('error',()=>{if(source==='local'&&audio.getAttribute('src'))toast('This audio format could not play. Try MP3 or WAV.')});
 $('#practiceAudio').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;playing=false;companionRunning=false;yt?.pauseVideo?.();audio.pause();source='local';$('#playbackNotice').hidden=true;$('#player').classList.remove('companion-source');
+  const f=e.target.files[0];if(!f)return;playing=false;companionRunning=false;yt?.pauseVideo?.();audio.pause();source='local';localSignature=f.name+'-'+f.size+'-'+f.lastModified;restoreAlignment();$('#playbackNotice').hidden=true;$('#player').classList.remove('companion-source');
   if(localAudioUrl)URL.revokeObjectURL(localAudioUrl);localAudioUrl=URL.createObjectURL(f);audio.src=localAudioUrl;audio.hidden=false;$('#audioName').textContent=f.name;$('#player').classList.add('local-source');
   try{if(!audioCtx){audioCtx=new AudioContext();audioAnalyser=audioCtx.createAnalyser();audioAnalyser.fftSize=256;audioBins=new Uint8Array(audioAnalyser.frequencyBinCount);audioNode=audioCtx.createMediaElementSource(audio);audioNode.connect(audioAnalyser);audioAnalyser.connect(audioCtx.destination)}await audioCtx.resume()}catch{ /* Plain audio playback remains available if analysis is unsupported. */ }
   lastDrawnLine=-999;try{await audio.play()}catch{toast('Your audio is ready. Press play in the audio controls.')}
