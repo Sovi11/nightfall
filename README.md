@@ -16,4 +16,10 @@ Original synthesized demo grooves are generated locally. Recording exports the f
 
 Concert date defaults to 6 November 2026, Malaysia time. Practice progress is saved in localStorage on the current browser/origin. The rotation is a learning selection, not a verified setlist.
 
+Concert / Karaoke / Learn modes: a glittering canvas stage, slow animated spotlights, audience silhouettes and phone lights, three colour themes, fullscreen where supported, reduced-motion controls, and large current/previous/next lyric lines. Automatic lyrics are requested at runtime from [LRCLIB](https://lrclib.net/docs); no song lyrics are bundled in the repository. Availability and accuracy depend on that service. Custom imported/pasted lyrics take priority and remain browser-local. Timed LRC supports multiple timestamps and file offsets; plain text uses manual line navigation. A ±120-second adjustment handles different intros. Imported audio drives the glitter intensity; YouTube uses an ambient light show because its audio cannot be analysed by this page.
+
+Premium membership is managed by YouTube, not this site. Embedded-player ads can appear when the browser's YouTube session is signed out or cookies are blocked; see [YouTube Help](https://support.google.com/youtube/answer/7437519). No ad blocking or membership bypass is implemented.
+
+Run lyric timing tests with `node --test tests/lyrics.test.cjs`. Syntax checks: `node --check app.js`, `node --check lyric-core.js`, and `node --check tracks.js`.
+
 Validation: JavaScript syntax checks, HTTP 200 checks, browser verification of search and learned state, two-deck demo playback, visible audio metering, tempo sync, cue/loop controls, and recording download creation. YouTube embedding was unavailable in the preview browser; direct links and local playback are provided.
