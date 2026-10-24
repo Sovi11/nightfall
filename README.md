@@ -22,4 +22,10 @@ Premium membership is managed by YouTube, not this site. Embedded-player ads can
 
 Run lyric timing tests with `node --test tests/lyrics.test.cjs`. Syntax checks: `node --check app.js`, `node --check lyric-core.js`, and `node --check tracks.js`.
 
+Player v3 creates the YouTube iframe explicitly and sets `referrerpolicy="strict-origin-when-cross-origin"` before assigning its URL, then attaches the IFrame API to that existing iframe. The document declares the same referrer policy, and the embed URL includes the actual page origin. A browser or embedding host can still suppress the network referrer; code 153 is explained in a persistent playback notice with an external-browser link-copy action. Code 101/150 restrictions are reported separately. This does not bypass YouTube restrictions or guarantee embedded playback in every browser.
+
+If embedding is blocked, the optional external-player companion keeps the stage and lyrics on this page while the user plays the song on YouTube. Its start/pause/reset/±5s clock is explicitly manual; it does not read or control a different tab or the YouTube app. Local audio and the embedded player continue to use their real playback clocks. Imported lyrics are now inside optional controls; the main UI shows the automatic-lookup state and line count. Timed lyrics were available for all 18 catalog titles at validation time, but runtime availability still depends on LRCLIB.
+
+Run all regression tests with `node --test tests/*.test.cjs`.
+
 Validation: JavaScript syntax checks, HTTP 200 checks, browser verification of search and learned state, two-deck demo playback, visible audio metering, tempo sync, cue/loop controls, and recording download creation. YouTube embedding was unavailable in the preview browser; direct links and local playback are provided.
